@@ -3,13 +3,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const postModel = require("../models/PostModel");
 const { post } = require("../routers/user");
+const followersModel = require("../models/FollowersModel");
 require("dotenv").config();
 
 module.exports = {
   login: (data) => {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log(data, "login");
         let userData = await userSignUp.findOne({ email: data.email });
         if (userData) {
           bcrypt.compare(
@@ -41,7 +41,6 @@ module.exports = {
   signup: (data) => {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log(data);
         const signupUserExist = await userSignUp
           .findOne({ email: data.email })
           .lean();
@@ -68,13 +67,32 @@ module.exports = {
       }
     });
   },
-  Search: (name) => {
+  Search: (name, neglet) => {
     return new Promise(async (resolve, reject) => {
       try {
         let resultName = await userSignUp
-          .find({ firstName: new RegExp("^" + name, "i") })
+          .find({
+            $and: [
+              { firstName: new RegExp("^" + name, "i") },
+              { _id: { $ne: neglet.user_id } },
+            ],
+          })
           .lean();
-        console.log(resultName);
+
+        if (resultName[0]) {
+          for (let i = 0; i < resultName.length; i++) {
+            let status = await followersModel.findOne({
+              user: resultName[i]._id,
+              followers: neglet.user_id,
+            });
+            if (status) {
+              resultName[i].status = true;
+            } else {
+              resultName[i].status = false;
+            }
+          }
+        }
+
         resolve(resultName);
       } catch (error) {
         reject(error);
@@ -95,7 +113,7 @@ module.exports = {
         post.dt = d;
         postModel.create(post).then(async (newPost) => {
           await newPost.populate("user");
-          newPost.likeStatus=false
+          newPost.likeStatus = false;
           resolve(newPost);
         });
       } catch (error) {
@@ -104,7 +122,6 @@ module.exports = {
     });
   },
   getPosts: (user) => {
-    
     return new Promise(async (resolve, reject) => {
       try {
         let posts = await postModel
@@ -112,22 +129,21 @@ module.exports = {
           .populate("user")
           .sort({ createdAt: -1 })
           .lean();
-        posts=posts.map((obj)=>{
-
-          if(obj.likes){
-            for(let i=0;i<obj.likes.length;i++){
-              if(obj.likes[i]==user.user_id){
-                obj.likeStatus=true
-                return obj
+        posts = posts.map((obj) => {
+          if (obj.likes) {
+            for (let i = 0; i < obj.likes.length; i++) {
+              if (obj.likes[i] == user.user_id) {
+                obj.likeStatus = true;
+                return obj;
               }
             }
-            obj.likeStatus=false
-            return obj
-          }else{
-            obj.likeStatus=false
-            return obj
+            obj.likeStatus = false;
+            return obj;
+          } else {
+            obj.likeStatus = false;
+            return obj;
           }
-        })
+        });
         resolve(posts);
       } catch (error) {
         reject(error);
@@ -135,28 +151,88 @@ module.exports = {
     });
   },
   GiveLike: (data) => {
-    console.log(data, "data");
     return new Promise(async (resolve, reject) => {
       const liked = await postModel
         .findOne({ likes: data.user, _id: data.postId })
         .lean();
       if (!liked) {
         postModel
-          .findOneAndUpdate({ _id: data.postId }, { $push: { likes: data.user } })
+          .findOneAndUpdate(
+            { _id: data.postId },
+            { $push: { likes: data.user } }
+          )
           .then((response) => {
-            console.log(response);
-            resolve({status:true,likes:response.likes.length+1});
+            resolve({ status: true, likes: response.likes.length + 1 });
           });
-      }else{
+      } else {
         postModel
-        .findOneAndUpdate({ _id: data.postId }, { $pull: { likes: data.user } })
-        .then((response) => {
-          console.log(response);
-          resolve({status:false,likes:response.likes.length-1});
-        });
+          .findOneAndUpdate(
+            { _id: data.postId },
+            { $pull: { likes: data.user } }
+          )
+          .then((response) => {
+            resolve({ status: false, likes: response.likes.length - 1 });
+          });
       }
+    });
+  },
+  GiveComment: (Comment) => {
+    return new Promise((resolve, reject) => {
+      postModel
+        .updateOne(
+          { _id: Comment.id },
+          { $push: { comment: { user: Comment.user, text: Comment.comment } } }
+        )
+        .then((response) => {
+          resolve();
+        });
+    });
+  },
+  Follow: (body) => {
+    return new Promise(async (resolve, reject) => {
+      const user = await followersModel.findOne({ user: body.userId }).lean();
 
-      //resolve("liked");
+      if (user) {
+        const following = await followersModel
+          .findOne({ user: body.userId, followers: body.user })
+          .lean();
+
+        if (!following) {
+          followersModel
+            .findOneAndUpdate(
+              { user: body.userId },
+              { $push: { followers: body.user } }
+            )
+            .then((response) => {
+              resolve({ status: true });
+            });
+        } else {
+          followersModel
+            .findOneAndUpdate(
+              { user: body.userId },
+              { $pull: { followers: body.user } }
+            )
+            .then((response) => {
+              resolve({ status: false });
+            });
+        }
+      } else {
+        followersModel
+          .create({ user: body.userId, followers: body.user })
+          .then((response) => {
+            resolve({ status: false });
+          });
+      }
+    });
+  },
+  getFriends: (body) => {
+    return new Promise((resolve, reject) => {
+      followersModel
+        .find({ followers: body.user_id })
+        .populate("user")
+        .then((response) => {
+          resolve(response);
+        });
     });
   },
 };

@@ -1,26 +1,35 @@
-const mongoose=require('mongoose')
-let schema=mongoose.Schema
-const Model=schema({
-    user:{
-        type: schema.Types.ObjectId,
-        ref: 'users'
-
+const mongoose = require("mongoose");
+let schema = mongoose.Schema;
+const Model = schema(
+  {
+    user: {
+      type: schema.Types.ObjectId,
+      ref: "users",
     },
 
-    postId:String,
-    description:String,
-    likes:[{
+    postId: String,
+    description: String,
+    likes: [
+      {
         type: schema.Types.ObjectId,
-        ref: 'users'
+        ref: "users",
+      },
+    ],
+    dt: String,
+    comment: [
+      {
+        user: {
+          type: schema.Types.ObjectId,
+          ref: "users",
+        },
+        text: String,
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
-    }],
-    dt:String
-    
-},{
-    
-    timestamps:true
-}
-)
-
-const postModel=mongoose.model("posts",Model)
-module.exports = postModel
+const postModel = mongoose.model("posts", Model);
+module.exports = postModel;
