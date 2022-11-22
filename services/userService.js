@@ -2,8 +2,8 @@ const userSignUp = require("../models/UserModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const postModel = require("../models/PostModel");
-const { post } = require("../routers/user");
 const followersModel = require("../models/FollowersModel");
+const chatModel = require("../models/ChatModel");
 require("dotenv").config();
 
 module.exports = {
@@ -127,6 +127,7 @@ module.exports = {
         let posts = await postModel
           .find()
           .populate("user")
+          .populate("comment.user")
           .sort({ createdAt: -1 })
           .lean();
         posts = posts.map((obj) => {
@@ -144,6 +145,7 @@ module.exports = {
             return obj;
           }
         });
+        console.log(posts[0].comment[0].user.firstName);
         resolve(posts);
       } catch (error) {
         reject(error);
@@ -230,9 +232,128 @@ module.exports = {
       followersModel
         .find({ followers: body.user_id })
         .populate("user")
+        .lean()
         .then((response) => {
           resolve(response);
         });
+    });
+  },
+  getChat: (sendUser, toUser) => {
+    return new Promise(async (resolve, reject) => {
+      let chat = await chatModel
+        .findOne({ "from.user": sendUser.user_id, "to.user": toUser })
+        .lean();
+      console.log("chat", chat);
+      if (!chat) {
+        let SecondTry = await chatModel
+          .findOne({ "from.user": toUser, "to.user": sendUser.user_id })
+          .lean();
+        console.log("secondtry", SecondTry);
+        if (!SecondTry) {
+          resolve({ chat: [], room: sendUser.user_id });
+        } else {
+          resolve({ chat: SecondTry.to.messages, room: SecondTry.room });
+        }
+      } else {
+        resolve({ chat: chat.from.messages, room: chat.room });
+      }
+    });
+  },
+  chatCreate: (sendUser, toUser, messages) => {
+    return new Promise(async (resolve, reject) => {
+      let room;
+      let chat = await chatModel
+        .findOne({ "from.user": sendUser.user_id, "to.user": toUser })
+        .lean();
+      if (!chat) {
+        let SecondTry = await chatModel
+          .findOne({ "from.user": toUser, "to.user": sendUser.user_id })
+          .lean();
+
+        if (!SecondTry) {
+          chatModel
+            .create({
+              from: { user: sendUser.user_id, messages: messages },
+              to: { user: toUser, messages: [] },
+              room: sendUser.user_id,
+            })
+            .then((response) => {
+              resolve({ room: sendUser.user_id });
+            });
+        } else {
+          console.log("updated", messages);
+          if (messages[0]) {
+            chatModel
+              .updateOne(
+                { "from.user": toUser, "to.user": sendUser.user_id },
+                { $set: { "to.messages": messages, status: "true" } }
+              )
+              .then((response) => {
+                resolve({ room: SecondTry.room });
+              });
+          } else {
+            resolve();
+          }
+        }
+      } else {
+        console.log("updatedChat", messages);
+        if (messages[0]) {
+          let userStatus= await userSignUp.findOne({_id:toUser})
+          if(userStatus.status=="online"){
+
+          }
+          chatModel.updateOne(
+              { "from.user": sendUser.user_id, "to.user": toUser },
+              { $set: { "from.messages": messages, status: "true" } }
+            )
+            .then((response) => {
+              resolve({ room: chat.room });
+            });
+        } else {
+          resolve({ room: sendUser.user_id });
+        }
+      }
+    });
+  },
+  getUserChat: (body) => {
+    return new Promise((resolve, reject) => {
+      chatModel
+        .find({
+          $or: [
+            { $and: [{ "from.user": body.user_id }, { status: "true" }] },
+            { $and: [{ "to.user": body.user_id }, { status: "true" }] },
+          ],
+        })
+        .populate("from.user")
+        .populate("to.user")
+        .then((response) => {
+          let a = [];
+          for (let i = 0; i < response.length; i++) {
+            if (response[i].from.user._id == body.user_id) {
+              a.push(response[i].to.user);
+            } else if (response[i].to.user._id == body.user_id) {
+              a.push(response[i].from.user);
+            }
+          }
+          resolve({ chats: a });
+        });
+    });
+  },
+  setOnline: (body, status) => {
+    return new Promise((resolve, reject) => {
+      if (status) {
+        userSignUp
+          .updateOne({ _id: body.user_id }, { $set: { status: "online" } })
+          .then((response) => {
+            resolve({ status: "online" });
+          });
+      } else {
+        userSignUp
+          .updateOne({ _id: body.user_id }, { $set: { status: "offline" } })
+          .then((response) => {
+            resolve({ status: "offline" });
+          });
+      }
     });
   },
 };

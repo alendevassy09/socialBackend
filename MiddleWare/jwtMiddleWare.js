@@ -22,7 +22,7 @@ module.exports={
       const token = req.body.token || req.query.token || req.headers.token;
   
     if (!token) {
-      lo                                                                                             
+                                                                                                   
       console.log("1");
       return res.json({status:false})
     }

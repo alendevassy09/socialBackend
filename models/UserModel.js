@@ -5,8 +5,8 @@ const userSignUp = mongoose.model("users", {
   email:String,
   pasword:String,
   birth:String,
-  gender:String
-
+  gender:String,
+  status:String
 });
 
 module.exports = userSignUp;

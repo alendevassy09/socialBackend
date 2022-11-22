@@ -47,4 +47,29 @@ module.exports = {
       res.json(response);
     });
   },
+  getChat:(req,res,next)=>{
+   let toUser= req.headers.touser
+   
+    user.getChat(req.user,toUser).then((response)=>{
+      res.json(response)
+    })
+  },
+  chatCreate:(req,res,next)=>{
+    let toUser= req.headers.touser
+    
+    user.chatCreate(req.user,toUser,req.body.messages).then((response)=>{
+      res.json(response)
+    })
+  },
+  getUserChat:(req,res,next)=>{
+    user.getUserChat(req.user).then((response)=>{
+      res.json(response)
+    })
+  },
+  setOnline:(req,res,next)=>{
+    let status=req.headers.status
+    user.setOnline(req.user,status).then((response)=>{
+      res.json(response)
+    })
+  }
 };
