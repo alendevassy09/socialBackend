@@ -57,7 +57,7 @@ module.exports = {
   chatCreate:(req,res,next)=>{
     let toUser= req.headers.touser
     
-    user.chatCreate(req.user,toUser,req.body.messages).then((response)=>{
+    user.chatCreate(req.user,toUser,req.body.messages,req.body.to).then((response)=>{
       res.json(response)
     })
   },

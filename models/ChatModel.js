@@ -3,6 +3,7 @@ let schema = mongoose.Schema;
 const Model = schema(
   {
     from: {
+      status:String,
       user: {
         type: schema.Types.ObjectId,
         ref: "users",
@@ -10,37 +11,23 @@ const Model = schema(
       messages: [
         { 
             gotMessage: {
-            message: String,
+            message: { type: String, trim: true },
             author: String,
             room: String,
             time: String,
           },
           sendMessage: {
-            message: String,
+            message: { type: String, trim: true },
             author: String,
             room: String,
             time: String,
           },
         },
       ],
-      unread:[
-        { 
-            gotMessage: {
-            message: String,
-            author: String,
-            room: String,
-            time: String,
-          },
-          sendMessage: {
-            message: String,
-            author: String,
-            room: String,
-            time: String,
-          },
-        },
-      ]
+      
     },
     to: {
+      status:String,
       user: {
         type: schema.Types.ObjectId,
         ref: "users",
@@ -48,35 +35,20 @@ const Model = schema(
       messages: [
         { 
             gotMessage: {
-            message: String,
+            message: { type: String, trim: true },
             author: String,
             room: String,
             time: String,
           },
           sendMessage: {
-            message: String,
+            message: { type: String, trim: true },
             author: String,
             room: String,
             time: String,
-          },
+          }
         },
       ],
-      unread:[
-        { 
-            gotMessage: {
-            message: String,
-            author: String,
-            room: String,
-            time: String,
-          },
-          sendMessage: {
-            message: String,
-            author: String,
-            room: String,
-            time: String,
-          },
-        },
-      ]
+      
     },
     status:String,
     room: { type: schema.Types.ObjectId, ref: "users" },

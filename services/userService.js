@@ -145,7 +145,7 @@ module.exports = {
             return obj;
           }
         });
-        console.log(posts[0].comment[0].user.firstName);
+        //console.log(posts[0].comment[0].user.firstName);
         resolve(posts);
       } catch (error) {
         reject(error);
@@ -243,23 +243,31 @@ module.exports = {
       let chat = await chatModel
         .findOne({ "from.user": sendUser.user_id, "to.user": toUser })
         .lean();
-      console.log("chat", chat);
+      //console.log("chat", chat);
       if (!chat) {
         let SecondTry = await chatModel
           .findOne({ "from.user": toUser, "to.user": sendUser.user_id })
           .lean();
-        console.log("secondtry", SecondTry);
+        //log("secondtry", SecondTry);
         if (!SecondTry) {
           resolve({ chat: [], room: sendUser.user_id });
         } else {
-          resolve({ chat: SecondTry.to.messages, room: SecondTry.room });
+          resolve({
+            chat: SecondTry.to.messages,
+           
+            room: SecondTry.room,
+          });
         }
       } else {
-        resolve({ chat: chat.from.messages, room: chat.room });
+        resolve({
+          chat: chat.from.messages,
+          
+          room: chat.room,
+        });
       }
     });
   },
-  chatCreate: (sendUser, toUser, messages) => {
+  chatCreate: (sendUser, toUser, messages, to) => {
     return new Promise(async (resolve, reject) => {
       let room;
       let chat = await chatModel
@@ -281,12 +289,19 @@ module.exports = {
               resolve({ room: sendUser.user_id });
             });
         } else {
-          console.log("updated", messages);
           if (messages[0]) {
             chatModel
               .updateOne(
                 { "from.user": toUser, "to.user": sendUser.user_id },
-                { $set: { "to.messages": messages, status: "true" } }
+                {
+                  $set: { "to.messages": messages, status: "true" },
+                  $push: {
+                    "from.messages": {
+                      $each: [{ gotMessage: to }],
+                      $position: 0,
+                    },
+                  },
+                }
               )
               .then((response) => {
                 resolve({ room: SecondTry.room });
@@ -296,15 +311,18 @@ module.exports = {
           }
         }
       } else {
-        console.log("updatedChat", messages);
         if (messages[0]) {
-          let userStatus= await userSignUp.findOne({_id:toUser})
-          if(userStatus.status=="online"){
+          console.log(to, "asdfksddk");
 
-          }
-          chatModel.updateOne(
+          chatModel
+            .updateOne(
               { "from.user": sendUser.user_id, "to.user": toUser },
-              { $set: { "from.messages": messages, status: "true" } }
+              {
+                $set: { "from.messages": messages, status: "true" },
+                $push: {
+                  "to.messages": { $each: [{ gotMessage: to }], $position: 0 },
+                },
+              }
             )
             .then((response) => {
               resolve({ room: chat.room });
