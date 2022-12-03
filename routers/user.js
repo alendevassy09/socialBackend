@@ -14,8 +14,19 @@ router.post("/likePost", middelWare.userPost, userController.GiveLike);
 router.post("/comment", middelWare.userPost, userController.Comment);
 router.post("/follow", middelWare.userPost, userController.Follow);
 router.get("/getFriends", middelWare.userGet, userController.getFriends);
+router.get("/notFollowed", middelWare.userGet, userController.notFollowed);
 router.get("/getChats",middelWare.userGet,userController.getUserChat)
 router.get("/chat", middelWare.userGet, userController.getChat);
 router.post("/chatCreate", middelWare.userPost, userController.chatCreate);
 router.get("/online",middelWare.userGet,userController.setOnline)
+router.post("/statusUpdate",middelWare.userPost,userController.statusUpdate)
+router.get("/getStory",middelWare.userGet,userController.getStory);
+router.patch('/seenStory',middelWare.userPost,userController.seenStory);
+router.put('/profile',middelWare.userPost,userController.Profile);
+router.get('/profilePicGet',middelWare.userGet,userController.ProfilePicGet);
+router.put('/cover',middelWare.userPost,userController.Cover);
+router.post('/addBio',middelWare.userPost,userController.addBio)
+router.post('/editBio',middelWare.userPost,userController.editBio)
+router.get('/modalProfile',middelWare.userGet,userController.modalProfile);
+router.patch('/save',middelWare.userPost,userController.save)
 module.exports = router;

@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const postModel = require("../models/PostModel");
 const followersModel = require("../models/FollowersModel");
 const chatModel = require("../models/ChatModel");
+const statusModel = require("../models/StatusModel");
+const save = require("../models/SavedModal");
 require("dotenv").config();
 
 module.exports = {
@@ -49,7 +51,7 @@ module.exports = {
         } else {
           data.pasword = await bcrypt.hash(data.pasword, 10);
 
-          userSignUp.create(data).then((response) => {
+          userSignUp.create(data).then(async (response) => {
             let token = jwt.sign(
               { user_id: response._id, email: response.email },
               process.env.TOKEN_KEY,
@@ -59,6 +61,7 @@ module.exports = {
             );
 
             response.token = token;
+            await followersModel.create({ user: response._id });
             resolve({ ...response, exist: false });
           });
         }
@@ -146,7 +149,41 @@ module.exports = {
           }
         });
         //console.log(posts[0].comment[0].user.firstName);
-        resolve(posts);
+
+        function count() {
+          return new Promise((resolve, reject) => {
+            save
+              .findOne({ user: user.user_id })
+              .populate("posts")
+              .then((response) => {
+                var index = 0;
+              
+                function res() {
+                  resolve();
+                }
+
+                for (index = 0; index < posts.length; index++) {
+                  if(response)
+                  for (var i = 0; i < response.posts.length; i++) {
+                    if ("" + posts[index]._id == "" + response.posts[i]._id) {
+                      posts[index].save = true;
+                      break;
+                    } else {
+                      posts[index].save = false;
+                    }
+                  }
+                  if (index == posts.length - 1) {
+                    res();
+                  }
+                }
+              });
+          });
+        }
+        async function saveCheck() {
+          await count();
+          resolve(posts);
+        }
+        saveCheck();
       } catch (error) {
         reject(error);
       }
@@ -231,9 +268,39 @@ module.exports = {
     return new Promise((resolve, reject) => {
       followersModel
         .find({ followers: body.user_id })
+        .limit(7)
+        .sort({
+          updatedAt: -1,
+        })
         .populate("user")
         .lean()
         .then((response) => {
+          resolve(response);
+        });
+    });
+  },
+  notFollowed: (body) => {
+    return new Promise((resolve, reject) => {
+      followersModel
+        .find({
+          $and: [
+            { followers: { $ne: body.user_id } },
+            { user: { $ne: body.user_id } },
+          ],
+        })
+        .limit(4)
+        .populate("user")
+        .lean()
+        .then(async (response) => {
+          for (let index = 0; index < response.length; index++) {
+            response[index].num = response[index].followers.length;
+            if (response[index].user) {
+              response[index].postCount = await postModel
+                .find({ user: response[index].user._id })
+                .count();
+            }
+          }
+
           resolve(response);
         });
     });
@@ -254,14 +321,14 @@ module.exports = {
         } else {
           resolve({
             chat: SecondTry.to.messages,
-           
+
             room: SecondTry.room,
           });
         }
       } else {
         resolve({
           chat: chat.from.messages,
-          
+
           room: chat.room,
         });
       }
@@ -371,6 +438,181 @@ module.exports = {
           .then((response) => {
             resolve({ status: "offline" });
           });
+      }
+    });
+  },
+  statusUpdate: (story) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        var dateWithoutSecond = new Date();
+        let d = dateWithoutSecond.toLocaleTimeString([], {
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        story.dt = d;
+        let exist = await statusModel.findOne({ user: story.user });
+        if (!exist) {
+          statusModel.create(story).then(async (newPost) => {
+            await newPost.populate("user");
+            newPost.likeStatus = false;
+            console.log(newPost);
+            resolve(newPost);
+          });
+        } else {
+          statusModel
+            .updateOne(
+              { user: story.user },
+              { $push: { storyId: story.storyId } }
+            )
+            .then((response) => {
+              resolve();
+            });
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  },
+  getStory: (body) => {
+    return new Promise((resolve, reject) => {
+      followersModel
+        .find({ followers: body.user_id })
+        .populate("user")
+        .then((response) => {
+          let users = [];
+          for (let index = 0; index < response.length; index++) {
+            users.push(response[index].user._id);
+          }
+          statusModel
+            .find({ user: users })
+            .populate("user")
+            .then((status) => {
+              //status[0].seenStatus=true
+              resolve(status);
+            });
+        });
+    });
+  },
+  seenStory: (body) => {
+    return new Promise((resolve, reject) => {
+      console.log(body);
+      statusModel
+        .updateOne({ _id: body.storyId }, { $push: { seen: body.user } })
+        .then((response) => {
+          resolve(response);
+        });
+    });
+  },
+  Profile: (body) => {
+    return new Promise((resolve, reject) => {
+      console.log("this is the body", body);
+      userSignUp
+        .updateOne({ _id: body.user }, { $set: { profile: body.postId } })
+        .then((response) => {
+          resolve(response);
+        });
+    });
+  },
+  ProfilePicGet: (user) => {
+    return new Promise((resolve, reject) => {
+      followersModel
+        .findOne({ user: user.user_id })
+        .populate("user")
+        .populate("followers")
+        .lean()
+        .then((followers) => {
+          followersModel
+            .find({ followers: user.user_id })
+            .populate("user")
+            .populate("followers")
+            .lean()
+            .then((following) => {
+              console.log(followers);
+              console.log(following);
+              resolve({ followers: followers, following: following });
+            });
+        });
+    });
+  },
+  Cover: (body) => {
+    return new Promise((resolve, reject) => {
+      userSignUp
+        .updateOne({ _id: body.user }, { $set: { cover: body.storyId } })
+        .then((response) => {
+          resolve(response);
+          console.log(response);
+        });
+    });
+  },
+  addBio: (body) => {
+    return new Promise((resolve, reject) => {
+      try {
+        console.log(body);
+        userSignUp
+          .updateOne({ _id: body.user }, { $set: body })
+          .then((response) => {
+            resolve(body);
+          });
+      } catch (error) {}
+    });
+  },
+  editBio: (body) => {
+    return new Promise((resolve, reject) => {
+      try {
+        console.log(body);
+        userSignUp
+          .updateOne({ _id: body.user }, { $set: body })
+          .then((response) => {
+            resolve(body);
+          });
+      } catch (error) {}
+    });
+  },
+  modalProfile: (id) => {
+    return new Promise((resolve, reject) => {
+      try {
+        followersModel.findOne({ user: id }).then((followers) => {
+          followersModel.find({ followers: id }).then((following) => {
+            followers = followers.followers.length;
+            following = following.length;
+            resolve({ followers, following });
+          });
+        });
+      } catch (error) {}
+    });
+  },
+  save: (body, post) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let user = await save.findOne({ user: body.user_id });
+
+        if (!user) {
+          save.create({ user: body.user_id, posts: post }).then((response) => {
+            resolve(response);
+          });
+        } else {
+          let check = await save.findOne({
+            $and: [{ user: body.user_id }, { posts: post }],
+          });
+          if (check) {
+            save
+              .updateOne({ user: body.user_id }, { $pull: { posts: post } })
+              .then((response) => {
+                resolve(response);
+              });
+          } else {
+            save
+              .updateOne({ user: body.user_id }, { $push: { posts: post } })
+              .then((response) => {
+                resolve(response);
+              });
+          }
+        }
+      } catch (error) {
+        reject(error);
       }
     });
   },

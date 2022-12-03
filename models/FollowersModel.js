@@ -9,8 +9,8 @@ const Model=schema({
     followers:[
         {
             type: schema.Types.ObjectId,
-            ref: 'users'
-    
+            ref: 'users',
+            default:""
         }
     ]
     
