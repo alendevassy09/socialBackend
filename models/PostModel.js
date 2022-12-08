@@ -16,6 +16,10 @@ const Model = schema(
       },
     ],
     dt: String,
+    likeStatus:{
+      type:Boolean,
+      default:false
+    },
     comment: [
       {
         user: {

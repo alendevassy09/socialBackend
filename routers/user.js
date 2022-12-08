@@ -6,6 +6,8 @@ const authCheck = require("../MiddleWare/authCheck");
 
 router.get("/authCheck", authCheck.user);
 router.post("/userLogin", userController.Login);
+router.patch("/passwordUpdate", userController.PasswordUpdate);
+router.get('/sendEmail',userController.sendEmail)
 router.post("/signup", userController.Signup);
 router.get("/search", middelWare.userGet, userController.Search);
 router.post("/post", middelWare.userPost, userController.Post);
@@ -26,7 +28,14 @@ router.put('/profile',middelWare.userPost,userController.Profile);
 router.get('/profilePicGet',middelWare.userGet,userController.ProfilePicGet);
 router.put('/cover',middelWare.userPost,userController.Cover);
 router.post('/addBio',middelWare.userPost,userController.addBio)
+router.patch('/deleteBio',middelWare.userPost,userController.deleteBio)
 router.post('/editBio',middelWare.userPost,userController.editBio)
 router.get('/modalProfile',middelWare.userGet,userController.modalProfile);
-router.patch('/save',middelWare.userPost,userController.save)
+router.patch('/save',middelWare.userPost,userController.save);
+router.get('/getsaved',middelWare.userGet,userController.getsaved);
+router.patch('/removeFromSave',middelWare.userPost,userController.removeFromSave);
+router.get("/mypost", middelWare.userGet, userController.mypost);
+router.get("/profileModalPost", middelWare.userGet, userController.profileModalPost);
+router.patch('/removePost',middelWare.userPost,userController.removePost);
+
 module.exports = router;

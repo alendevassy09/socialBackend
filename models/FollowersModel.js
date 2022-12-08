@@ -10,7 +10,14 @@ const Model=schema({
         {
             type: schema.Types.ObjectId,
             ref: 'users',
-            default:""
+            default:undefined
+        }
+    ],
+    following:[
+        {
+            type: schema.Types.ObjectId,
+            ref: 'users',
+            default:undefined
         }
     ]
     
