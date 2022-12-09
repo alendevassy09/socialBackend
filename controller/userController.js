@@ -28,8 +28,14 @@ module.exports = {
     });
   },
   Signup: async (req, res, next) => {
-    await user.signup(req.body).then((response) => {
+     user.signup(req.body).then((response) => {
       res.json({ response });
+    });
+  },
+  googleSignUp: async (req, res, next) => {
+     user.googleSignUp(req.user).then((response) => {
+      console.log("this is response",response);
+      res.json( response );
     });
   },
   Search: async (req, res, next) => {

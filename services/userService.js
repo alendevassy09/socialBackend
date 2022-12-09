@@ -87,6 +87,48 @@ module.exports = {
       });
     });
   },
+  googleSignUp: (data) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const signupUserExist = await userSignUp
+          .findOne({ email: data.email })
+          .lean();
+        if (signupUserExist) {
+          let token = jwt.sign(
+            { user_id: signupUserExist._id, email: signupUserExist.email },
+            process.env.TOKEN_KEY,
+            {
+              expiresIn: "2h",
+            }
+          );
+          resolve({ exist: true,token,userData:signupUserExist });
+
+        } else {
+          userSignUp.create({email:data.email,firstName:data.given_name,LastName:data.family_name}).then(async (response) => {
+            let token = jwt.sign(
+              { user_id: response._doc._id, email: response._doc.email },
+              process.env.TOKEN_KEY,
+              {
+                expiresIn: "2h",
+              }
+            );
+              
+            response.token = token;
+            await followersModel.create({
+              user: response._doc._id,
+              followers: [],
+              following: [],
+            });
+            await save.create({ user: response._doc._id, posts: [] });
+            console.log(response);
+            resolve({ userData:response._doc,token, exist: false });
+          });
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  },
   signup: (data) => {
     return new Promise(async (resolve, reject) => {
       try {

@@ -5,9 +5,10 @@ const middelWare = require("../MiddleWare/jwtMiddleWare");
 const authCheck = require("../MiddleWare/authCheck");
 
 router.get("/authCheck", authCheck.user);
+router.post("/googleAuth", authCheck.googleAuth,userController.googleSignUp);
 router.post("/userLogin", userController.Login);
 router.patch("/passwordUpdate", userController.PasswordUpdate);
-router.get('/sendEmail',userController.sendEmail)
+router.get('/sendEmail',userController.sendEmail);
 router.post("/signup", userController.Signup);
 router.get("/search", middelWare.userGet, userController.Search);
 router.post("/post", middelWare.userPost, userController.Post);

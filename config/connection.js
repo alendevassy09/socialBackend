@@ -1,8 +1,10 @@
 const mongoose=require('mongoose')
+require("dotenv").config();
+
 module.exports={
     connect:()=>{
         try{
-            mongoose.connect('mongodb+srv://alendevassy09:sirmx9fXyMrtab09@cluster0.vw6pqhv.mongodb.net/socialMedia',(err)=>{
+            mongoose.connect(process.env.MONGO_DB,(err)=>{
                 if(err){
                     console.log(err);
                 }else{

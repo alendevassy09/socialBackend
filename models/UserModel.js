@@ -14,6 +14,9 @@ const userSignUp = mongoose.model(
     worksAt: { type: String, default: "" },
     liveAt: { type: String, default: "" },
     studiedAt: { type: String, default: "" },
+    locationAt: { type: String, default: "" },
+    webPage: { type: String, default: "" },
+    token:{ type: String, default: "" }
   }
 );
 
