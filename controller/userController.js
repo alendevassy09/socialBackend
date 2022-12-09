@@ -11,6 +11,9 @@ module.exports = {
         next(err);
       });
   },
+  Home:(req,res,next)=>{
+    res.send('home')
+  },
   PasswordUpdate: async (req, res, next) => {
     user
       .PasswordUpdate(req.body)

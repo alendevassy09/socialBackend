@@ -4,6 +4,8 @@ const userController = require("../controller/userController");
 const middelWare = require("../MiddleWare/jwtMiddleWare");
 const authCheck = require("../MiddleWare/authCheck");
 
+
+router.get("/",userController.Home);
 router.get("/authCheck", authCheck.user);
 router.post("/googleAuth", authCheck.googleAuth,userController.googleSignUp);
 router.post("/userLogin", userController.Login);
