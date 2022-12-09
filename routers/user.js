@@ -7,7 +7,7 @@ const authCheck = require("../MiddleWare/authCheck");
 
 router.get("/",userController.Home);
 router.get("/authCheck", authCheck.user);
-router.post("/googleAuth", authCheck.googleAuth,userController.googleSignUp);
+//router.post("/googleAuth", authCheck.googleAuth,userController.googleSignUp);
 router.post("/userLogin", userController.Login);
 router.patch("/passwordUpdate", userController.PasswordUpdate);
 router.get('/sendEmail',userController.sendEmail);
