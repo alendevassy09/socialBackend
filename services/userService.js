@@ -271,11 +271,11 @@ module.exports = {
                     posts[index].reportPost = true;
                   }
                   console.log(posts[index]);
-                  for (let i = 0; i < posts[index].reports.length; i++) {
-                    if (posts[index].reports[i] == user.user_id) {
-                      posts[index].report = true;
-                    }
-                  }
+                  // for (let i = 0; i < posts[index].reports.length; i++) {
+                  //   if (posts[index].reports[i] == user.user_id) {
+                  //     posts[index].report = true;
+                  //   }
+                  // }s
 
                   if (response)
                     for (var i = 0; i < response.posts.length; i++) {

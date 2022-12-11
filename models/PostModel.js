@@ -35,7 +35,8 @@ const Model = schema(
         type: schema.Types.ObjectId,
         ref: "users",
       }
-    ]
+    ],
+    reportPost:false
   },
   {
     timestamps: true,
