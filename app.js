@@ -4,6 +4,7 @@ const port = 4000;
 const logger = require("morgan");
 const cookieParser = require("cookie-parser");
 const users = require("./routers/user");
+const admin = require('./routers/admin')
 const db = require("./config/connection");
 const ErrorHandler = require('./MiddleWare/ErrorHandle')
 
@@ -41,6 +42,7 @@ io.on("connection", (socket) => {
 });
 
 app.use("/", users);
+app.use('/admin',admin)
 app.use(ErrorHandler)
 server.listen(port, () => {
   console.log(`server is running in port ${port}`);

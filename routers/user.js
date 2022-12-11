@@ -40,5 +40,5 @@ router.patch('/removeFromSave',middelWare.userPost,userController.removeFromSave
 router.get("/mypost", middelWare.userGet, userController.mypost);
 router.get("/profileModalPost", middelWare.userGet, userController.profileModalPost);
 router.patch('/removePost',middelWare.userPost,userController.removePost);
-
+router.post("/reportpost",middelWare.userPost,userController.reportPost)
 module.exports = router;

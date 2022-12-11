@@ -11,6 +11,17 @@ module.exports = {
         next(err);
       });
   },
+  AdminLogin: async (req, res, next) => {
+    user
+      .login(req.body)
+      .then((userStatus) => {
+        res.json(userStatus);
+      })
+      .catch((err) => {
+        console.log(err);
+        next(err);
+      });
+  },
   Home:(req,res,next)=>{
     res.send('home')
   },
@@ -218,4 +229,11 @@ module.exports = {
         next(err);
       });
   },
+  reportPost:(req,res,next)=>{
+    console.log(req.body.postId,req.body.user,req.body.reason);
+    user.reportPost(req.body.postId,req.body.user,req.body.reason).then(()=>{
+      res.json()
+    })
+    
+  }
 };

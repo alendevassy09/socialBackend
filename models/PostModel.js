@@ -16,9 +16,9 @@ const Model = schema(
       },
     ],
     dt: String,
-    likeStatus:{
-      type:Boolean,
-      default:false
+    likeStatus: {
+      type: Boolean,
+      default: false,
     },
     comment: [
       {
@@ -29,6 +29,13 @@ const Model = schema(
         text: String,
       },
     ],
+    report: { default: false, type: Boolean },
+    reports:[
+      {
+        type: schema.Types.ObjectId,
+        ref: "users",
+      }
+    ]
   },
   {
     timestamps: true,

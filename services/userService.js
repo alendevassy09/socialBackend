@@ -7,6 +7,7 @@ const chatModel = require("../models/ChatModel");
 const statusModel = require("../models/StatusModel");
 const save = require("../models/SavedModal");
 const nodemailer = require("nodemailer");
+const report = require("../models/ReportModel");
 require("dotenv").config();
 
 module.exports = {
@@ -32,7 +33,7 @@ module.exports = {
                 resolve({ user: true, password: false });
               }
             }
-          );  
+          );
         } else {
           resolve({ user: false });
         }
@@ -101,28 +102,33 @@ module.exports = {
               expiresIn: "2h",
             }
           );
-          resolve({ exist: true,token,userData:signupUserExist });
-
+          resolve({ exist: true, token, userData: signupUserExist });
         } else {
-          userSignUp.create({email:data.email,firstName:data.given_name,LastName:data.family_name}).then(async (response) => {
-            let token = jwt.sign(
-              { user_id: response._doc._id, email: response._doc.email },
-              process.env.TOKEN_KEY,
-              {
-                expiresIn: "2h",
-              }
-            );
-              
-            response.token = token;
-            await followersModel.create({
-              user: response._doc._id,
-              followers: [],
-              following: [],
+          userSignUp
+            .create({
+              email: data.email,
+              firstName: data.given_name,
+              LastName: data.family_name,
+            })
+            .then(async (response) => {
+              let token = jwt.sign(
+                { user_id: response._doc._id, email: response._doc.email },
+                process.env.TOKEN_KEY,
+                {
+                  expiresIn: "2h",
+                }
+              );
+
+              response.token = token;
+              await followersModel.create({
+                user: response._doc._id,
+                followers: [],
+                following: [],
+              });
+              await save.create({ user: response._doc._id, posts: [] });
+              console.log(response);
+              resolve({ userData: response._doc, token, exist: false });
             });
-            await save.create({ user: response._doc._id, posts: [] });
-            console.log(response);
-            resolve({ userData:response._doc,token, exist: false });
-          });
         }
       } catch (error) {
         reject(error);
@@ -258,6 +264,19 @@ module.exports = {
                 }
 
                 for (index = 0; index < posts.length; index++) {
+                  if (posts[index].user._id == user.user_id) {
+                    console.log("user posts");
+                    posts[index].reportPost = false;
+                  } else {
+                    posts[index].reportPost = true;
+                  }
+                  console.log(posts[index]);
+                  for (let i = 0; i < posts[index].reports.length; i++) {
+                    if (posts[index].reports[i] == user.user_id) {
+                      posts[index].report = true;
+                    }
+                  }
+
                   if (response)
                     for (var i = 0; i < response.posts.length; i++) {
                       if ("" + posts[index]._id == "" + response.posts[i]._id) {
@@ -1062,7 +1081,19 @@ module.exports = {
           .findOneAndDelete({ _id: post })
           .then((response) => {
             console.log(response);
-            resolve(response.postId);
+
+            save.find().then(async (saves) => {
+              for (let index = 0; index < saves.length; index++) {
+                if (saves[index].posts.includes(post)) {
+                  await save.updateOne(
+                    { _id: saves[index]._id },
+                    { $pull: { posts: post } }
+                  );
+                }
+              }
+            await report.deleteOne({postId:post})
+              resolve(response.postId);
+            });
           })
           .catch((err) => {
             console.log("asdfdsf");
@@ -1071,6 +1102,42 @@ module.exports = {
         console.log("sdff");
         reject(error);
       }
+    });
+  },
+  reportPost: (postId, userId, reason) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let type = {};
+        if (reason == "type1") {
+          type = {
+            type1: true,
+          };
+        } else if (reason == "type2") {
+          type = {
+            type2: true,
+          };
+        } else if (reason == "type3") {
+          type = {
+            type3: true,
+          };
+        } else if (reason == "type4") {
+          type = {
+            type4: true,
+          };
+        }
+        let exist = await report.findOne({ postId: postId });
+        if (!exist) {
+          report.create({ postId: postId, ...type }).then((response) => {
+            resolve();
+          });
+        } else {
+          report
+            .updateOne({ postId: postId }, { $set: type })
+            .then((response) => {
+              resolve();
+            });
+        }
+      } catch (error) {}
     });
   },
 };
