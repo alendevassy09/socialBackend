@@ -691,12 +691,14 @@ module.exports = {
           .lean()
           .then((followers) => {
             followersModel
-              .find({ followers: user.user_id })
+              .find({ followers: user.user_id }) 
               .populate("user")
               .populate("followers")
               .lean()
               .then((following) => {
-                resolve({ followers: followers, following: following });
+                userSignUp.findOne({ _id: user.user_id }).then((newUser) => {
+                  resolve({ followers: followers, following: following,user:newUser });
+                });
               });
           });
       } catch (err) {
@@ -1091,7 +1093,7 @@ module.exports = {
                   );
                 }
               }
-            await report.deleteOne({postId:post})
+              await report.deleteOne({ postId: post });
               resolve(response.postId);
             });
           })

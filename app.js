@@ -14,6 +14,7 @@ const { Server } = require("socket.io");
 const io = new Server(server,{
     cors:{
         origin:"https://vall-e.netlify.app",
+        // origin:"http://localhost:3000",
         methods:["GET","POST"]
     }
 });
